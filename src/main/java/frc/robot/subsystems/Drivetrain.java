@@ -24,6 +24,9 @@ public class Drivetrain extends SubsystemBase {
   private final XRPMotor m_leftMotor = new XRPMotor(0);
   private final XRPMotor m_rightMotor = new XRPMotor(1);
 
+  public double leftMotorMultiplier = 1.0;
+  public double rightMotorMultiplier = 1.0;
+
   // The XRP has onboard encoders that are hardcoded
   // to use DIO pins 4/5 and 6/7 for the left and right
   private final Encoder m_leftEncoder = new Encoder(4, 5);
@@ -31,7 +34,7 @@ public class Drivetrain extends SubsystemBase {
 
   // Set up the differential drive controller
   private final DifferentialDrive m_diffDrive =
-      new DifferentialDrive(m_leftMotor::set, m_rightMotor::set);
+  new DifferentialDrive((speed) -> m_leftMotor.set(speed * leftMotorMultiplier), (speed) -> m_rightMotor.set(speed * rightMotorMultiplier));
 
   // Set up the XRPGyro
   private final XRPGyro m_gyro = new XRPGyro();

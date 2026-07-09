@@ -22,9 +22,9 @@ public class AutonomousFollow extends SequentialCommandGroup {
     addCommands(
       Commands.repeatingSequence(
         // Drive forward while far from the object
-        new DriveSpeed(drivetrain, SPEED).onlyWhile(() -> true),
+        new DriveSpeed(drivetrain, SPEED).onlyWhile(() -> rangefinder.getDistanceInches() > FOLLOW_DISTANCE + 1),
         // Drive backward while close to the object
-        new DriveSpeed(drivetrain, -SPEED).onlyWhile(() -> false)
+        new DriveSpeed(drivetrain, -SPEED).onlyWhile(() -> rangefinder.getDistanceInches() < FOLLOW_DISTANCE)
       )
     );
   }

@@ -5,6 +5,8 @@
 package frc.robot.commands;
 
 import frc.robot.subsystems.Drivetrain;
+import edu.wpi.first.wpilibj.xrp.XRPRangefinder;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 
 /**
@@ -14,13 +16,18 @@ public class AutonomousDistance extends SequentialCommandGroup {
 
   private static final double SPEED = 0.75;
 
-  public AutonomousDistance(Drivetrain drivetrain, double inches) {
+  public AutonomousDistance(Drivetrain drivetrain, XRPRangefinder distanceSensor) {
     addCommands(
-      new DriveDistance(drivetrain, SPEED, inches),
-      new TurnDegrees(drivetrain, SPEED, 180),
-      new DriveDistance(drivetrain, SPEED, inches),
-      new TurnDegrees(drivetrain, SPEED, 180)
-    );
+      Commands.repeatingSequence(
+          new DriveSpeed(drivetrain, 0.95).repeatedly().onlyWhile(() -> distanceSensor.getDistanceInches() > 10),
+          new TurnDegrees(drivetrain, 0.75, 90),
+          new DriveDistance(drivetrain, -0.95, 3).onlyIf(() -> distanceSensor.getDistanceInches() < 10),
+
+          new DriveSpeed(drivetrain, 0.95).repeatedly().onlyWhile(() -> distanceSensor.getDistanceInches() > 10),
+          new TurnDegrees(drivetrain, -0.75, 95),
+          new DriveDistance(drivetrain, -0.95, 3).onlyIf(() -> distanceSensor.getDistanceInches() < 10)
+          ));
+    ;
   }
 
 }

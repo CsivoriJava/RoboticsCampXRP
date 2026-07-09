@@ -9,11 +9,13 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Arm extends SubsystemBase {
   private final XRPServo m_armServo;
+  private final XRPServo m_armServo2;
 
   /** Creates a new Arm. */
   public Arm() {
     // Device number 4 maps to the physical Servo 1 port on the XRP
     m_armServo = new XRPServo(4);
+    m_armServo2 = new XRPServo(5);
   }
 
   @Override
@@ -28,5 +30,9 @@ public class Arm extends SubsystemBase {
    */
   public void setAngle(double angleDeg) {
     m_armServo.setAngle(angleDeg);
+    m_armServo2.setAngle(180 - angleDeg);
+  }
+  public double getAngle() {
+    return m_armServo.getAngle();
   }
 }

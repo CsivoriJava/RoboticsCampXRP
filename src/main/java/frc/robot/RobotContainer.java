@@ -7,6 +7,9 @@ package frc.robot;
 import frc.robot.commands.ArcadeDrive;
 import frc.robot.commands.AutonomousDistance;
 import frc.robot.commands.AutonomousFollow;
+import frc.robot.commands.BackAndForth;
+import frc.robot.commands.DriveForward;
+import frc.robot.commands.FollowLine;
 import frc.robot.commands.TurnDegrees;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
@@ -35,6 +38,8 @@ public class RobotContainer {
   // SmartDashboard chooser for autonomous routines
   private final SendableChooser<Command> autonomousChooser = new SendableChooser<>();
   
+  int servoAngle = 90;
+
   public RobotContainer() {
     // Configure the controller bindings for teleop
     configureTeleopBindings();
@@ -48,31 +53,86 @@ public class RobotContainer {
     drivetrain.setDefaultCommand(getArcadeDriveCommand());
 
     // Quickly rotate left or right with the bumper buttons
-    // controller.leftBumper().onTrue( );
-    // controller.rightBumper().onTrue( );
+    controller.button(9).onTrue(new TurnDegrees(drivetrain, 1, 90));
+    controller.button(10).onTrue(new TurnDegrees(drivetrain, 1, -90));
 
     // Hold the A button to follow a line
-    // controller.a().whileTrue(new FollowLine(drivetrain, lineFollower));
+    controller.button(2).whileTrue(new FollowLine(drivetrain, lineFollower));
 
     // Hold the B button to ram
-    // controller.b().whileTrue(new BackAndForth(drivetrain));
+    controller.button(3).whileTrue(new BackAndForth(drivetrain));
 
     // Hold the X button to rotate the servo out
-    controller.x()
-      .onTrue(new InstantCommand(() -> arm.setAngle(180), arm))
-      .onFalse(new InstantCommand(() -> arm.setAngle(90), arm));
+    controller.button(1)
+      .onTrue(new InstantCommand(() -> {
+        if (servoAngle == 90) {
+          servoAngle = 180;
+        }
+        else {
+          servoAngle = 90;
+        }
+        
+      }));
+      
+
+    // Hold the Y button to drive straight forward
+    controller.button(4).whileTrue(new DriveForward(drivetrain, -1));
+
+    controller.button(5).or(controller.button(8))
+      .onTrue(new InstantCommand(() -> drivetrain.leftMotorMultiplier = 0))
+      .onFalse(new InstantCommand(() -> drivetrain.leftMotorMultiplier = 1));
+
+    controller.button(6).or(controller.button(7))
+      .onTrue(new InstantCommand(() -> drivetrain.rightMotorMultiplier = 0))
+      .onFalse(new InstantCommand(() -> drivetrain.rightMotorMultiplier = 1));
+
+
   }
   
   private void configureAutonomousRoutines() {
     // Add all autonomous routines to the chooser so they can be selected from the dashboard
-    autonomousChooser.setDefaultOption("Distance", new AutonomousDistance(drivetrain, 10));
+    autonomousChooser.setDefaultOption("Distance", new AutonomousDistance(drivetrain, rangefinder));
     autonomousChooser.addOption("Follow", new AutonomousFollow(drivetrain, rangefinder));
+    autonomousChooser.addOption("Back and Forth", new BackAndForth(drivetrain));
     SmartDashboard.putData(autonomousChooser);
+  }
+
+  public void teleopPeriodic() {
+    // This code toggles the positon of the Servo in accordance to how the DPad is pressed.
+      int dPad = controller.getHID().getPOV();
+      if (dPad == -1) {
+        dPad = -45;
+      }
+      else {
+        dPad = dPad/4;
+      }
+
+      // This code combines the DPad angle with the Servo angle.
+      if (drivetrain.getCurrentCommand() instanceof BackAndForth) {
+        arm.setAngle(68);
+      }
+      else{
+        arm.setAngle(servoAngle-dPad);
+      }
+      SmartDashboard.putNumber("Servo Angle" , arm.getAngle());
+      SmartDashboard.putNumber("dPad Angle" , dPad);
+      SmartDashboard.putNumber("Servo Angle minus dPad" , servoAngle-dPad);
   }
 
   public void dashboardPeriodic() {
     // Update the dashboard
     SmartDashboard.putNumber("Rangefinder", rangefinder.getDistanceInches());
+    SmartDashboard.putNumber("Line Follower Left", lineFollower.getLeftReflectanceValue());
+    SmartDashboard.putNumber("Line Follower Right", lineFollower.getRightReflectanceValue());
+    SmartDashboard.putNumber("Drivetrain Distance Traveled" , drivetrain.getAverageDistanceInch());
+    SmartDashboard.putNumber("Gyro Angle" , drivetrain.getGyroAngleZ());
+    SmartDashboard.putNumber("X-Axis Acceleration" , drivetrain.getAccelX());
+    SmartDashboard.putNumber("Z-Axis Acceleration" , drivetrain.getAccelZ());
+    SmartDashboard.putNumber("Y-Axis Acceleration" , drivetrain.getAccelY());
+
+    double averageAccel = (drivetrain.getAccelX() + drivetrain.getAccelY() + drivetrain.getAccelZ()) / 3;
+    SmartDashboard.putNumber("Average Acceleration" , averageAccel);
+    
   }
 
   // Returns the autonomous routine selected on the dashboard (used in Robot.java)

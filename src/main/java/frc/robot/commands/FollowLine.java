@@ -5,20 +5,19 @@
 package frc.robot.commands;
 
 import frc.robot.subsystems.Drivetrain;
+import edu.wpi.first.wpilibj.xrp.XRPReflectanceSensor;
 import edu.wpi.first.wpilibj2.command.Command;
 
 /**
- * This command drives the robot at a given speed, while using the gyro to keep facing the same direction.
+ * This command drives the robot at a given speed.
  */
-public class DriveForward extends Command {
+public class FollowLine extends Command {
   private final Drivetrain m_drivetrain;
-  private final double m_speed;
+  private final XRPReflectanceSensor reflectanceSensor;
 
-  private double m_forwardAngle;
-
-  public DriveForward(Drivetrain drivetrain, double speed) {
+  public FollowLine(Drivetrain drivetrain, XRPReflectanceSensor m_reflectanceSensor) {
     m_drivetrain = drivetrain;
-    m_speed = speed;
+    reflectanceSensor = m_reflectanceSensor;
     addRequirements(drivetrain);
   }
 
@@ -27,14 +26,23 @@ public class DriveForward extends Command {
   public void initialize() {
     m_drivetrain.arcadeDrive(0, 0);
     m_drivetrain.resetEncoders();
-    m_forwardAngle = m_drivetrain.getGyroAngleZ();
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    double rotate = (m_forwardAngle - m_drivetrain.getGyroAngleZ()) / 100;
-    m_drivetrain.arcadeDrive(m_speed, rotate);
+    if (reflectanceSensor.getRightReflectanceValue()>0.8) {
+          m_drivetrain.arcadeDrive(0.75,-0.5);
+        }
+    
+        
+        else if (reflectanceSensor.getLeftReflectanceValue()>0.8) {
+          m_drivetrain.arcadeDrive(0.75,0.5);
+        }
+    
+        else {
+          m_drivetrain.arcadeDrive(0.75,0);
+        }
   }
 
   // Called once the command ends or is interrupted.
